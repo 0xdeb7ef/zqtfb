@@ -183,10 +183,16 @@ pub const Client = struct {
     pub fn getPixel(self: Client, x: i32, y: i32) usize {
         const xx: usize = @intCast(x);
         const yy: usize = @intCast(y);
+
+        return (yy * self.width + xx) * self.getBPS();
+    }
+
+    /// Helper function to return the bits per pixel.
+    pub fn getBPS(self: Client) usize {
         const ww: usize = @intCast(self.width);
         const hh: usize = @intCast(self.height);
 
-        return (yy * self.width + xx) * (self.shm.len / ww / hh);
+        return self.shm.len / ww / hh;
     }
 };
 
