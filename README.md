@@ -19,8 +19,8 @@ zig fetch --save git+https://github.com/0xdeb7ef/zqtfb.git
 And in your `build.zig`:
 
 ```zig
-const zqtfb_dep = b.depenceny("zqtfb", .{});
-exe.root_module.addImport("zqtfb", zqtfb_dep.module("zqtfb"));
+const zqtfb = b.dependency("zqtfb", .{});
+exe.root_module.addImport("zqtfb", zqtfb.module("zqtfb"));
 ```
 
 ## How do I use it?
