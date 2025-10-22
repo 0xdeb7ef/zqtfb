@@ -32,7 +32,7 @@ pub const Client = struct {
 
         var read_buf: [@sizeOf(Message.ServerMessage)]u8 = undefined;
         var socket_r = sock.reader(&read_buf);
-        const socket_reader = &socket_r.file_reader.interface;
+        const socket_reader = socket_r.interface();
 
         var init_message: Message.ClientMessage = undefined;
         if (custom_resolution != null) {
