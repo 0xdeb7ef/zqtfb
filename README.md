@@ -29,7 +29,7 @@ There is an `example.zig` file in `src`.
 You can clone the project as in and run:
 
 ```
-zig build -Dtarget=aarch64-linux-gnu
+zig build
 ```
 
 To get a `zig-out/bin/example` binary that you can deploy to your reMarkable Paper Pro (check out the [AppLoad](https://github.com/asivery/rm-appload) README for more details).

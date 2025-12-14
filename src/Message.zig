@@ -3,7 +3,9 @@ pub const MessageType = enum(u8) {
     update = 1,
     custom_init = 2,
     terminate = 3,
-    userinput = 4,
+    user_input = 4,
+    set_refresh_mode = 5,
+    request_full_refresh = 6,
 };
 
 pub const FramebufferType = enum(u8) {
@@ -58,6 +60,16 @@ pub const UpdateType = enum(i32) {
     partial = 1,
 };
 
+pub const RefreshMode = enum(i32) {
+    ufast = 0,
+    fast = 1,
+    animate = 2,
+    content = 3,
+    ui = 4,
+
+    pub const default = .ui;
+};
+
 pub const Init = extern struct {
     framebuffer_key: i32,
     framebuffer_type: FramebufferType,
@@ -81,6 +93,14 @@ pub const UpdateRegion = extern struct {
     y: i32,
     w: i32,
     h: i32,
+
+    pub const full = UpdateRegion{
+        .type = .all,
+        .x = 0,
+        .y = 0,
+        .w = 0,
+        .h = 0,
+    };
 };
 
 pub const Input = extern struct {
@@ -91,20 +111,35 @@ pub const Input = extern struct {
     d: i32,
 };
 
-pub const Terminate = extern struct {};
-
 pub const ClientMessage = extern struct {
     type: MessageType,
     message: extern union {
         init: Init,
         update: UpdateRegion,
         custom_init: CustomInit,
-        terminate: Terminate,
+        terminate: void,
+        refresh_mode: RefreshMode,
+        full_refresh: void,
     },
 
     pub const terminate = ClientMessage{
         .type = .terminate,
-        .message = .{ .terminate = .{} },
+        .message = .{ .terminate = {} },
+    };
+
+    pub const full_update = ClientMessage{
+        .type = .update,
+        .message = .{ .update = .full },
+    };
+
+    pub const default_mode = ClientMessage{
+        .type = .set_refresh_mode,
+        .message = .{ .refresh_mode = .default },
+    };
+
+    pub const full_refresh = ClientMessage{
+        .type = .request_full_refresh,
+        .message = .{ .full_refresh = {} },
     };
 };
 

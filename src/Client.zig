@@ -1,19 +1,20 @@
 //! Implementaion of qtfb-client in Zig
 
-/// Client struct that holds all shared memory buffer
+/// Client struct that holds the shared memory buffer
 /// and socket to communicate with AppLoad.
 pub const Client = struct {
-    shm: []align(std.heap.page_size_min) u8,
+    display: []align(std.heap.page_size_min) u8,
     socket: std.net.Stream,
     width: u16,
     height: u16,
+    refresh_mode: RefreshMode = .default,
 
     /// Initializes the Client connection to AppLoad
     pub fn init(
         /// framebuffer ID, use `getIDFromAppLoad` to get the correct ID
         framebuffer_id: i32,
         /// frambuffer type, see `Message.FramebufferType`
-        shm_type: FramebufferType,
+        display_type: FramebufferType,
         /// custom resolution, if needed
         custom_resolution: ?struct { width: u16, height: u16 },
         /// whether to put the socket in non-blocking mode
@@ -35,31 +36,31 @@ pub const Client = struct {
         const socket_reader = socket_r.interface();
 
         var init_message: Message.ClientMessage = undefined;
-        if (custom_resolution != null) {
-            client.width = custom_resolution.?.width;
-            client.height = custom_resolution.?.height;
+        if (custom_resolution) |cr| {
+            client.width = cr.width;
+            client.height = cr.height;
 
             init_message = .{
                 .type = .custom_init,
                 .message = .{
                     .custom_init = .{
                         .framebuffer_key = framebuffer_id,
-                        .framebuffer_type = shm_type,
+                        .framebuffer_type = display_type,
                         .width = client.width,
                         .height = client.height,
                     },
                 },
             };
         } else {
-            client.width = shm_type.getWidth();
-            client.height = shm_type.getHeight();
+            client.width = display_type.getWidth();
+            client.height = display_type.getHeight();
 
             init_message = .{
                 .type = .init,
                 .message = .{
                     .init = .{
                         .framebuffer_key = framebuffer_id,
-                        .framebuffer_type = shm_type,
+                        .framebuffer_type = display_type,
                     },
                 },
             };
@@ -100,7 +101,7 @@ pub const Client = struct {
             0,
         );
 
-        client.shm = memory;
+        client.display = memory;
         client.socket = sock;
 
         return client;
@@ -108,32 +109,18 @@ pub const Client = struct {
 
     /// Cleans up the memory mapping and closes the socket
     pub fn deinit(self: *Client) void {
-        posix.munmap(self.shm);
+        posix.munmap(self.display);
 
-        const msg: Message.ClientMessage = .terminate;
-        self.send(msg) catch {};
+        self.send(.terminate) catch {};
         self.socket.close();
     }
 
     /// Asks AppLoad to refresh the full display
     pub fn fullUpdate(self: *Client) !void {
-        try self.send(.{
-            .type = .update,
-            .message = .{
-                .update = .{
-                    .type = .all,
-                    .x = 0,
-                    .y = 0,
-                    .w = 0,
-                    .h = 0,
-                },
-            },
-        });
+        try self.send(.full_update);
     }
 
     /// Asks AppLoad to do a partial display refresh.
-    /// At the time of writing, seems to behave the same
-    /// as a full display refresh.
     pub fn partialUpdate(
         self: *Client,
         /// x coordinate
@@ -159,11 +146,37 @@ pub const Client = struct {
         });
     }
 
+    /// Requests a full refresh.
+    pub fn fullRefresh(self: *Client) !void {
+        try self.send(.full_refresh);
+    }
+
+    /// Set the display refresh mode.
+    pub fn setRefreshMode(self: *Client, mode: RefreshMode) !void {
+        try self.send(.{
+            .type = .set_refresh_mode,
+            .message = .{ .refresh_mode = mode },
+        });
+
+        self.refresh_mode = mode;
+    }
+
+    /// Reset the display to default refresh mode.
+    pub fn resetRefreshMode(self: *Client) !void {
+        try self.send(.default_mode);
+        self.refresh_mode = .default;
+    }
+
+    /// Gets the current refresh mode.
+    pub fn getRefreshMode(self: Client) RefreshMode {
+        return self.refresh_mode;
+    }
+
     /// Retrieves a packet from AppLoad
     pub fn pollServerPacket(self: *Client) !Message.ServerMessage {
         var read_buf: [@sizeOf(Message.ServerMessage)]u8 = undefined;
         var socket_r = self.socket.reader(&read_buf);
-        const socket_reader = &socket_r.file_reader.interface;
+        const socket_reader = socket_r.interface();
 
         return socket_reader.takeStruct(Message.ServerMessage, .little);
     }
@@ -192,7 +205,7 @@ pub const Client = struct {
         const ww: usize = @intCast(self.width);
         const hh: usize = @intCast(self.height);
 
-        return self.shm.len / ww / hh;
+        return self.display.len / ww / hh;
     }
 };
 
@@ -209,3 +222,4 @@ const std = @import("std");
 const posix = std.posix;
 const Message = @import("Message.zig");
 const FramebufferType = Message.FramebufferType;
+const RefreshMode = Message.RefreshMode;

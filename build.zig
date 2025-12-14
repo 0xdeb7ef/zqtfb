@@ -4,6 +4,22 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
+    // RMPP target features
+    var cpu_features: std.Target.Cpu.Feature.Set = std.Target.aarch64.cpu.cortex_a53.features;
+    cpu_features.addFeature(@intFromEnum(std.Target.aarch64.Feature.aes));
+    cpu_features.addFeature(@intFromEnum(std.Target.aarch64.Feature.crc));
+    cpu_features.addFeature(@intFromEnum(std.Target.aarch64.Feature.fp_armv8));
+    cpu_features.addFeature(@intFromEnum(std.Target.aarch64.Feature.neon));
+    cpu_features.addFeature(@intFromEnum(std.Target.aarch64.Feature.sha2));
+
+    const rmpp_target = b.resolveTargetQuery(.{
+        .cpu_arch = .aarch64,
+        .cpu_model = .{ .explicit = &std.Target.aarch64.cpu.cortex_a53 },
+        .cpu_features_add = cpu_features,
+        .os_tag = .linux,
+        .abi = .gnu,
+    });
+
     const mod = b.addModule("zqtfb", .{
         .root_source_file = b.path("src/root.zig"),
         .target = target,
@@ -14,7 +30,7 @@ pub fn build(b: *std.Build) void {
         .name = "example",
         .root_module = b.createModule(.{
             .root_source_file = b.path("src/example.zig"),
-            .target = target,
+            .target = rmpp_target,
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "zqtfb", .module = mod },
