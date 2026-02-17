@@ -1,13 +1,15 @@
 const std = @import("std");
+
 const zqtfb = @import("zqtfb");
+
 const raw = @embedFile("sample.raw");
 
 var close = false;
 var free = true;
 
-fn pollThread(client: *zqtfb.Client) void {
+fn pollThread(client: *zqtfb.Client, io: std.Io) void {
     while (!close) {
-        const s = client.pollServerPacket() catch {
+        const s = client.pollServerPacket(io) catch {
             continue;
         };
 
@@ -15,8 +17,8 @@ fn pollThread(client: *zqtfb.Client) void {
             switch (s.message.input.type) {
                 .touch_release => {
                     close = true;
-                    client.deinit();
-                    std.posix.exit(0);
+                    client.deinit(io);
+                    std.process.exit(0);
                     break;
                 },
                 .touch_press, .touch_update => {
@@ -24,11 +26,11 @@ fn pollThread(client: *zqtfb.Client) void {
                 },
                 .pen_press => {
                     free = false;
-                    client.setRefreshMode(.animate) catch {};
+                    client.setRefreshMode(io, .animate) catch {};
                 },
                 .pen_release => {
                     free = true;
-                    client.setRefreshMode(.content) catch {};
+                    client.setRefreshMode(io, .content) catch {};
                     continue;
                 },
                 else => {},
@@ -39,7 +41,7 @@ fn pollThread(client: *zqtfb.Client) void {
 
             pen(client, x, y, 20);
 
-            client.partialUpdate(x - 50, y - 50, 100, 100) catch {};
+            client.partialUpdate(io, x - 50, y - 50, 100, 100) catch {};
         }
     }
 }
@@ -75,36 +77,36 @@ fn pen(client: *zqtfb.Client, x: i32, y: i32, width: i32) void {
     }
 }
 
-fn updateThread(client: *zqtfb.Client) void {
+fn updateThread(client: *zqtfb.Client, io: std.Io) void {
     while (!close) {
-        std.posix.nanosleep(10, 0);
+        _ = std.os.linux.nanosleep(&.{ .sec = 10, .nsec = 0 }, null);
 
         if (free) {
-            client.fullRefresh() catch {
+            client.fullRefresh(io) catch {
                 continue;
             };
         }
     }
 }
 
-pub fn main() !void {
+pub fn main(init: std.process.Init) !void {
     // grab the framebuffer ID from AppLoad via QTFB_KEY env variable
-    const fb_key = try zqtfb.getIDFromAppLoad();
+    const fb_key = try zqtfb.getIDFromAppLoad(init.minimal.environ);
 
     // initialize the client, all functions except deinit may fail,
     // so handle errors accordingly
-    var c = try zqtfb.Client.init(fb_key, .rMPP_rgb888, null, false);
-    defer c.deinit();
+    var c = try zqtfb.Client.init(init.io, fb_key, .rMPP_rgb888, null, false);
+    defer c.deinit(init.io);
 
-    const t = try std.Thread.spawn(.{}, pollThread, .{&c});
-    const tt = try std.Thread.spawn(.{}, updateThread, .{&c});
+    const t = try std.Thread.spawn(.{}, pollThread, .{ &c, init.io });
+    const tt = try std.Thread.spawn(.{}, updateThread, .{ &c, init.io });
 
     const m = @min(raw.len, c.display.len);
     for (0..m) |i| {
         c.display[i] = raw[i];
     }
 
-    try c.fullUpdate();
+    try c.fullUpdate(init.io);
 
     t.join();
     tt.join();
