@@ -10,7 +10,7 @@ output to the display.
 
 ## How do I import it?
 
-As you would any other Zig library (you need Zig 0.15.1+):
+As you would any other Zig library (you need Zig 0.16.0+):
 
 ```
 zig fetch --save git+https://github.com/0xdeb7ef/zqtfb.git
