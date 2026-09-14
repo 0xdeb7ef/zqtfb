@@ -47,12 +47,30 @@ pub const InputType = enum(i32) {
 
     button_press = 0x30,
     button_release = 0x31,
+
+    vkeyboard_press = 0x40,
+    vkeyboard_release = 0x41,
 };
 
 pub const InputButton = enum(u32) {
     left = 0,
     home = 1,
     right = 2,
+};
+
+pub const InputVKeyboard = enum(u32) {
+    shiftmod = 0x100000,
+    ctrlmod = 0x200000,
+    altmod = 0x400000,
+    del = 0x7f,
+    pgup = 0x80,
+    pgdown = 0x81,
+    down = 0x82,
+    up = 0x83,
+    left = 0x84,
+    right = 0x85,
+    home = 0x86,
+    end = 0x87,
 };
 
 pub const UpdateType = enum(i32) {
@@ -70,13 +88,14 @@ pub const RefreshMode = enum(i32) {
     pub const default = .ui;
 };
 
+pub const FBKey = i32;
 pub const Init = extern struct {
-    framebuffer_key: i32,
+    framebuffer_key: FBKey,
     framebuffer_type: FramebufferType,
 };
 
 pub const CustomInit = extern struct {
-    framebuffer_key: i32,
+    framebuffer_key: FBKey,
     framebuffer_type: FramebufferType,
     width: u16,
     height: u16,
@@ -141,6 +160,64 @@ pub const ClientMessage = extern struct {
         .type = .request_full_refresh,
         .message = .{ .full_refresh = {} },
     };
+
+    pub fn init(
+        framebuffer_key: FBKey,
+        framebuffer_type: FramebufferType,
+    ) ClientMessage {
+        return ClientMessage{
+            .type = .init,
+            .message = .{
+                .init = .{
+                    .framebuffer_key = framebuffer_key,
+                    .framebuffer_type = framebuffer_type,
+                },
+            },
+        };
+    }
+
+    pub fn customInit(
+        framebuffer_key: FBKey,
+        framebuffer_type: FramebufferType,
+        width: u16,
+        height: u16,
+    ) ClientMessage {
+        return ClientMessage{
+            .type = .custom_init,
+            .message = .{
+                .custom_init = .{
+                    .framebuffer_key = framebuffer_key,
+                    .framebuffer_type = framebuffer_type,
+                    .width = width,
+                    .height = height,
+                },
+            },
+        };
+    }
+
+    pub fn update(x: i32, y: i32, w: i32, h: i32) ClientMessage {
+        return ClientMessage{
+            .type = .update,
+            .message = .{
+                .update = .{
+                    .type = .partial,
+                    .x = x,
+                    .y = y,
+                    .w = w,
+                    .h = h,
+                },
+            },
+        };
+    }
+
+    pub fn refreshMode(new_mode: RefreshMode) ClientMessage {
+        return ClientMessage{
+            .type = .set_refresh_mode,
+            .message = .{
+                .refresh_mode = new_mode,
+            },
+        };
+    }
 };
 
 pub const ServerMessage = extern struct {
