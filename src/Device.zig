@@ -34,7 +34,7 @@ pub const Device = enum {
         if (std.mem.containsAtLeast(u8, &buf, 1, "Chiappa")) {
             return .rMPPM;
         } else if (std.mem.containsAtLeast(u8, &buf, 1, "Ferrari")) {
-            return .rmPP;
+            return .rMPP;
         } else if (std.mem.containsAtLeast(u8, &buf, 1, "2.0")) {
             return .rM2;
         } else {
