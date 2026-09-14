@@ -19,7 +19,7 @@ pub const FramebufferType = enum(u8) {
     rMPPM_rgba8888 = 5,
     rMPPM_rgb565 = 6,
 
-    fn getDevice(self: FramebufferType) Device {
+    pub fn getDevice(self: FramebufferType) Device {
         return switch (self) {
             .rM2_fb => .rM2,
             .rMPP_rgb888, .rMPP_rgba8888, .rMPP_rgb565 => .rMPP,
