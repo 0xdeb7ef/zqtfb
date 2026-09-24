@@ -6,6 +6,8 @@ pub const MessageType = enum(u8) {
     user_input = 4,
     set_refresh_mode = 5,
     request_full_refresh = 6,
+    device_state_changed = 7,
+    device_state_init = 8,
 };
 
 pub const FramebufferType = enum(u8) {
@@ -19,11 +21,16 @@ pub const FramebufferType = enum(u8) {
     rMPPM_rgba8888 = 5,
     rMPPM_rgb565 = 6,
 
+    rMPPure_rgb888 = 7,
+    rMPPure_rgba8888 = 8,
+    rMPPure_rgb565 = 9,
+
     pub fn getDevice(self: FramebufferType) Device {
         return switch (self) {
             .rM2_fb => .rM2,
             .rMPP_rgb888, .rMPP_rgba8888, .rMPP_rgb565 => .rMPP,
             .rMPPM_rgb888, .rMPPM_rgba8888, .rMPPM_rgb565 => .rMPPM,
+            .rMPPure_rgb888, .rMPPure_rgba8888, .rMPPure_rgb565 => .rMPPure,
         };
     }
 
@@ -58,21 +65,6 @@ pub const InputButton = enum(u32) {
     right = 2,
 };
 
-pub const InputVKeyboard = enum(u32) {
-    shiftmod = 0x100000,
-    ctrlmod = 0x200000,
-    altmod = 0x400000,
-    del = 0x7f,
-    pgup = 0x80,
-    pgdown = 0x81,
-    down = 0x82,
-    up = 0x83,
-    left = 0x84,
-    right = 0x85,
-    home = 0x86,
-    end = 0x87,
-};
-
 pub const UpdateType = enum(i32) {
     all = 0,
     partial = 1,
@@ -84,8 +76,20 @@ pub const RefreshMode = enum(i32) {
     animate = 2,
     content = 3,
     ui = 4,
+    sleep = 5,
 
     pub const default = .ui;
+};
+
+pub const StateReason = enum(i32) {
+    rotation = 0,
+};
+
+pub const Rotation = enum(i32) {
+    @"0" = 0,
+    L90 = 1,
+    R90 = 2,
+    @"180" = 3,
 };
 
 pub const FBKey = i32;
@@ -128,6 +132,13 @@ pub const Input = extern struct {
     x: i32,
     y: i32,
     d: i32,
+};
+
+pub const DeviceState = extern struct {
+    state: StateReason,
+    data: extern union {
+        rotation: Rotation,
+    },
 };
 
 pub const ClientMessage = extern struct {
@@ -225,6 +236,7 @@ pub const ServerMessage = extern struct {
     message: extern union {
         init: InitResponse,
         input: Input,
+        device_state: DeviceState,
     },
 };
 

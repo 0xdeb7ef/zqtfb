@@ -28,18 +28,15 @@ exe.root_module.addImport("zqtfb", zqtfb.module("zqtfb"));
 There is an `example.zig` file in `src`.
 You can clone the project as in and run:
 
-```
+```console
 zig build
 ```
 
 To get a `zig-out/bin/example` binary that you can deploy to your reMarkable Paper Pro (check out the [AppLoad](https://github.com/asivery/rm-appload) README for more details).
 
-(I have not tested other devices, but it should work on the rM2 and Move as well, you
-just have to compile for the right architecture, and pick the right framebuffer type).
+You may also build the example for other devices with the `-Ddevice` option.
 
-## TODO
-
-- [ ] The code at the moment is not very Zig-like, so it would be better to update
-      it and make it more Zig-like maybe?
-- [ ] Add some tests, perhaps?
-- [ ] More robust error handling, currently all errors are ignored with `try`.
+```console
+# target the reMarkable 2
+zig build -Ddevice=rm2
+```

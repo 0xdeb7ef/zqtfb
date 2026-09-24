@@ -4,12 +4,14 @@ pub const Device = enum {
     rM2,
     rMPP,
     rMPPM,
+    rMPPure,
 
     pub fn getWidth(self: Device) u16 {
         return switch (self) {
             .rM2 => 1404,
             .rMPP => 1620,
             .rMPPM => 954,
+            .rMPPure => 1404,
         };
     }
 
@@ -18,6 +20,7 @@ pub const Device = enum {
             .rM2 => 1872,
             .rMPP => 2160,
             .rMPPM => 1696,
+            .rMPPure => 1872,
         };
     }
 
@@ -31,7 +34,9 @@ pub const Device = enum {
 
         _ = device_file.readPositionalAll(io, &buf, 0) catch unreachable;
 
-        if (std.mem.containsAtLeast(u8, &buf, 1, "Chiappa")) {
+        if (std.mem.containsAtLeast(u8, &buf, 1, "Tatsu")) {
+            return .rMPPure;
+        } else if (std.mem.containsAtLeast(u8, &buf, 1, "Chiappa")) {
             return .rMPPM;
         } else if (std.mem.containsAtLeast(u8, &buf, 1, "Ferrari")) {
             return .rMPP;

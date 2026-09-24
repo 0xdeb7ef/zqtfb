@@ -132,7 +132,7 @@ pub const Client = struct {
     }
 
     /// Asks AppLoad to refresh the full display
-    pub fn fullUpdate(self: *Client, io: std.Io) !void {
+    pub fn fullUpdate(self: *Client, io: std.Io) Error!void {
         try self.send(io, .full_update);
     }
 
@@ -148,7 +148,7 @@ pub const Client = struct {
         w: i32,
         /// height
         h: i32,
-    ) !void {
+    ) Error!void {
         try self.send(io, .update(x, y, w, h));
     }
 
