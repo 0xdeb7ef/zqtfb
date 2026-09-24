@@ -6,7 +6,9 @@ pub fn build(b: *std.Build) void {
     const device = b.option(remarkable.Device, "device", "reMarkable device to build for") orelse .ferrari;
     const optimize = b.standardOptimizeOption(.{});
 
-    const target = remarkable.resolve(b, device);
+    const target = b.standardTargetOptions(.{
+        .default_target = remarkable.query(device),
+    });
 
     const mod = b.addModule("zqtfb", .{
         .root_source_file = b.path("src/root.zig"),
