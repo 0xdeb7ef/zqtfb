@@ -26,7 +26,7 @@ exe.root_module.addImport("zqtfb", zqtfb.module("zqtfb"));
 ## How do I use it?
 
 There is an `example.zig` file in `src`.
-You can clone the project as in and run:
+You can clone the project as is and run:
 
 ```console
 zig build
