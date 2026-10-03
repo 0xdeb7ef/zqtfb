@@ -1,6 +1,6 @@
 const std = @import("std");
 
-const remarkable = @import("zig_remarkable");
+pub const remarkable = @import("zig_remarkable");
 
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});

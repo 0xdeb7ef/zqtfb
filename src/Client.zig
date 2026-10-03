@@ -92,10 +92,11 @@ pub const Client = struct {
         }
 
         var shm_name_buf: [20]u8 = @splat(0);
-        const shm_name = std.fmt.bufPrintZ(
+        const shm_name = std.mem.printSentinel(
             &shm_name_buf,
             "/qtfb_{d}",
             .{server_response.message.init.shm_key},
+            0,
         ) catch unreachable;
 
         const shm = std.c.shm_open(
