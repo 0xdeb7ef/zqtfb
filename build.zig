@@ -2,6 +2,12 @@ const std = @import("std");
 
 pub const remarkable = @import("zig_remarkable");
 
+const Manifest = .{
+    .name = "ZQTFB Example",
+    .application = "example",
+    .qtfb = true,
+};
+
 pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
@@ -31,5 +37,29 @@ pub fn build(b: *std.Build) void {
         }),
     });
 
-    b.installArtifact(example);
+    const install = b.addInstallArtifact(example, .{
+        .dest_dir = .{
+            .override = .{
+                .custom = Manifest.application,
+            },
+        },
+    });
+
+    const json = std.fmt.allocPrint(
+        b.allocator,
+        "{f}\n",
+        .{std.json.fmt(
+            Manifest,
+            .{ .whitespace = .indent_2 },
+        )},
+    ) catch unreachable;
+
+    const manifest = b.addInstallFileWithDir(
+        b.addWriteFiles().add("manifest", json),
+        install.dest_dir.?,
+        "external.manifest.json",
+    );
+
+    b.getInstallStep().dependOn(&install.step);
+    b.getInstallStep().dependOn(&manifest.step);
 }
